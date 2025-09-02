@@ -1,0 +1,28 @@
+@Skill_Matrix_Serv_HostAddress = http://10.235.212.209:1005/api
+
+# Test WeatherForecast endpoint
+GET {{Skill_Matrix_Serv_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
+
+# Example login endpoint
+POST {{Skill_Matrix_Serv_HostAddress}}/LOGIN
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "testpassword"
+}
+
+###
+
+# Example GET all users (if your API has it)
+GET {{Skill_Matrix_Serv_HostAddress}}/users
+Accept: application/json
+
+###
+
+# Example GET specific user by id
+GET {{Skill_Matrix_Serv_HostAddress}}/users/1
+Accept: application/json

@@ -2,6 +2,7 @@ using System.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Skill_Matrix_Serv.Data.DTOs;
 
 namespace Skill_Matrix_Serv.Data.Models
 {
@@ -92,9 +93,18 @@ namespace Skill_Matrix_Serv.Data.Models
 
         [HttpGet("GET_Operator_By_ID")]
 
-        public JsonResult GET_Operator_By_ID(int Matricule)
+        public JsonResult GET_Operator_By_ID(int Matricule, string? Station = null)
         {
-            string query="select * from [Test_DB].[dbo].[Operators] where Matricule=@Matricule;";
+            string query;
+            if (string.IsNullOrEmpty(Station))
+            {
+                query = "select * from [Test_DB].[dbo].[Operators] where Matricule=@Matricule;";
+            }
+            else
+            {
+                query = "select * from [Test_DB].[dbo].[Operators] where Matricule=@Matricule and CurrentStation=@Station;";
+            }
+
             DataTable table=new DataTable();
             string? SqlDataSource = _config.GetConnectionString("Test_DB");
             SqlDataReader myReader;
@@ -112,6 +122,10 @@ namespace Skill_Matrix_Serv.Data.Models
                 using(SqlCommand myCommand=new SqlCommand(query,myCon))
                 {
                     myCommand.Parameters.AddWithValue("@Matricule",Matricule);
+                    if (!string.IsNullOrEmpty(Station))
+                    {
+                        myCommand.Parameters.AddWithValue("@Station", Station);
+                    }
                     myReader=myCommand.ExecuteReader();
                     table.Load(myReader);
                     System.Diagnostics.Debug.WriteLine(table);
@@ -126,7 +140,7 @@ namespace Skill_Matrix_Serv.Data.Models
 
         [HttpGet("GET_Levels_By_Operator")]
 
-        public JsonResult GET_Levels_By_Operator(int Matricule)
+        public JsonResult GET_Levels_By_Operator(int Matricule, string Station)
         {
             DataTable table=new DataTable();
             string? SqlDataSource = _config.GetConnectionString("Test_DB");
@@ -170,8 +184,8 @@ namespace Skill_Matrix_Serv.Data.Models
                         t1.ANS19,
                         t1.ANS20
                 FROM [Test_DB].[dbo].Answers t1 
-                JOIN [Test_DB].[dbo].[Operators] t2 ON t2.matricule = t1.OperatorMat AND t1.OperatorMat=@Matricule AND t1.Station=t2.CurrentStation
                 JOIN [Test_DB].[dbo].[Levels] t3 ON t3.LvlID = t1.LVLID
+                WHERE t1.OperatorMat=@Matricule AND t1.Station=@Station
                 ORDER BY t1.LVLID
 
 
@@ -179,6 +193,7 @@ namespace Skill_Matrix_Serv.Data.Models
                 "),myCon))
                 {
                     myCommand.Parameters.AddWithValue("@Matricule",Matricule);
+                    myCommand.Parameters.AddWithValue("@Station",Station);
                     myReader=myCommand.ExecuteReader();
                     table.Load(myReader);
                     System.Diagnostics.Debug.WriteLine(table);
@@ -318,8 +333,10 @@ namespace Skill_Matrix_Serv.Data.Models
 
 
 [HttpPut("Update_Operator_By_Matricule")]
-public JsonResult Update_Operator_By_Matricule(int Matricule, string Name, string Project, string CurrentStation, string CurrentLevel, string TeamLeader)
+public JsonResult Update_Operator_By_Matricule(int Matricule, string Name, string Project, string CurrentStation, string CurrentLevel, string TeamLeader, string? OldStation = null)
 {
+    string targetStation = OldStation ?? CurrentStation;
+
     string updateOperatorQuery = @"
         UPDATE [dbo].[Operators]
         SET 
@@ -329,7 +346,7 @@ public JsonResult Update_Operator_By_Matricule(int Matricule, string Name, strin
             CurrentLevel = @CurrentLevel,
             TeamLeader = @TeamLeader
         WHERE 
-            Matricule = @Matricule";
+            Matricule = @Matricule AND CurrentStation = @TargetStation";
 
     string resetScoresQuery = @"
         UPDATE [dbo].[Answers]
@@ -338,7 +355,7 @@ public JsonResult Update_Operator_By_Matricule(int Matricule, string Name, strin
             ANS9 = 0, ANS10 = 0, ANS11 = 0, ANS12 = 0, ANS13 = 0, ANS14 = 0, ANS15 = 0, ANS16 = 0,
             ANS17 = 0, ANS18 = 0, ANS19 = 0, ANS20 = 0,
             Score = 0
-        WHERE OperatorMat = @Matricule AND LVLID >= @CurrentLevel";
+        WHERE OperatorMat = @Matricule AND LVLID >= @CurrentLevel AND Station = @TargetStation";
 
     string? SqlDataSource = _config.GetConnectionString("Test_DB");
 
@@ -356,6 +373,7 @@ public JsonResult Update_Operator_By_Matricule(int Matricule, string Name, strin
                 cmd1.Parameters.AddWithValue("@CurrentStation", CurrentStation);
                 cmd1.Parameters.AddWithValue("@CurrentLevel", CurrentLevel);
                 cmd1.Parameters.AddWithValue("@TeamLeader", TeamLeader);
+                cmd1.Parameters.AddWithValue("@TargetStation", targetStation);
 
                 cmd1.ExecuteNonQuery();
             }
@@ -364,6 +382,7 @@ public JsonResult Update_Operator_By_Matricule(int Matricule, string Name, strin
             {
                 cmd2.Parameters.AddWithValue("@Matricule", Matricule);
                 cmd2.Parameters.AddWithValue("@CurrentLevel", CurrentLevel);
+                cmd2.Parameters.AddWithValue("@TargetStation", targetStation);
 
                 cmd2.ExecuteNonQuery();
             }
@@ -460,7 +479,7 @@ public IActionResult UpdateOperatorLevel([FromBody] UpdateOperatorLevelRequest r
     string query = @"
         UPDATE [dbo].[Operators]
         SET CurrentLevel = @NewLevel
-        WHERE Matricule = @Matricule";
+        WHERE Matricule = @Matricule AND CurrentStation = @Station";
 
     string? sqlDataSource = _config.GetConnectionString("Test_DB");
     using (SqlConnection myCon = new SqlConnection(sqlDataSource))
@@ -468,6 +487,7 @@ public IActionResult UpdateOperatorLevel([FromBody] UpdateOperatorLevelRequest r
         SqlCommand myCommand = new SqlCommand(query, myCon);
         myCommand.Parameters.AddWithValue("@Matricule", request.matricule);
         myCommand.Parameters.AddWithValue("@NewLevel", request.newLevel);
+        myCommand.Parameters.AddWithValue("@Station", request.station);
 
         myCon.Open();
         int rowsAffected = myCommand.ExecuteNonQuery();

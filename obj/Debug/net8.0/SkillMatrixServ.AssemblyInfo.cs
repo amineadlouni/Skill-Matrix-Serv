@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SkillMatrixServ")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b9000acdf94b86b19d2e5324650999f47858a6b6")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+37efe9969e200172f11cd887b0f856cce6598a33")]
 [assembly: System.Reflection.AssemblyProductAttribute("SkillMatrixServ")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SkillMatrixServ")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
